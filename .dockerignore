@@ -1,0 +1,66 @@
+# ------------------------------
+# Python cache & bytecode
+# ------------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ------------------------------
+# Virtual environments
+# ------------------------------
+venv/
+.venv/
+env/
+.env/
+
+# ------------------------------
+# Jupyter Notebooks
+# ------------------------------
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ------------------------------
+# Data (DO NOT include datasets in Docker)
+# ------------------------------
+data/
+!data/README.md
+
+# ------------------------------
+# Logs
+# ------------------------------
+logs/
+*.log
+
+# ------------------------------
+# Model artifacts — keep these out of container
+# ------------------------------
+models/
+*.pkl
+*.joblib
+*.h5
+*.onnx
+*.bin
+
+# ------------------------------
+# Git & version control
+# ------------------------------
+.git/
+.gitignore
+.gitattributes
+
+# ------------------------------
+# Environment files
+# ------------------------------
+*.env
+.env.*
+
+# ------------------------------
+# Build directories
+# ------------------------------
+build/
+dist/
+*.egg-info/
+
+# ------------------------------
+# Docker build outputs
