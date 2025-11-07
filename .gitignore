@@ -1,0 +1,90 @@
+# ------------------------------
+# Python cache & bytecode files
+# ------------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# ------------------------------
+# Virtual environments
+# ------------------------------
+venv/
+.venv/
+env/
+.env/
+pip-wheel-metadata/
+pip-log.txt
+
+# ------------------------------
+# Environment variables
+# ------------------------------
+*.env
+.env.*
+secrets.json
+credentials.json
+
+# ------------------------------
+# Jupyter Notebook
+# ------------------------------
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ------------------------------
+# Data Files (local only)
+# ------------------------------
+data/**/*.csv
+data/**/*.xlsx
+data/**/*.parquet
+data/**/*.json
+data/**/*.zip
+
+# Allow data README
+!data/README.md
+
+# ------------------------------
+# Logs
+# ------------------------------
+logs/
+*.log
+
+# ------------------------------
+# Model artifacts
+# ------------------------------
+models/
+*.pkl
+*.joblib
+*.h5
+*.onnx
+*.bin
+
+# ------------------------------
+# VSCode
+# ------------------------------
+.vscode/
+
+# ------------------------------
+# PyCharm
+# ------------------------------
+.idea/
+
+# ------------------------------
+# MacOS system files
+# ------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ------------------------------
+# Docker
+# ------------------------------
+docker-build/
+*.tar
+
+# ------------------------------
+# Build / distribution
+# ------------------------------
+dist/
+build/
+*.egg-info/
