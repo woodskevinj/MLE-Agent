@@ -8,6 +8,11 @@ class Planner:
 
     def create_plan(self, user_input: str):
         """
-        Returns a list of steps the agen should perform.
+        Minimal plan: a single LLM step.
         """
-        pass
+        # steps = [
+        #     {"action": "llm", "input": user_input},
+        #     {"action": "respond", "input": "Return final answer to user"},
+        # ]
+        # return steps
+        return [{"type": "llm", "input": user_input}]

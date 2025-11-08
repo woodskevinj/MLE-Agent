@@ -4,17 +4,16 @@ Short/long-term memory system for the agent.
 
 class Memory:
     def __init__(self):
-        # initialize memory structures
-        pass
+        self.history = []
 
     def add(self, item):
         """
-        Add a memory item.
+        Add a memory item to history
         """
-        pass
+        self.history.append(item)
 
     def retrieve(self, query: str):
         """
-        Retrieve related memory
+        Return full history for now.
         """
-        pass
+        return self.history

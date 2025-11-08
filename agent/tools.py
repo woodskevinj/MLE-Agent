@@ -13,7 +13,7 @@ class ToolRegistry:
         self.tools[name] = tool_fn
 
     def call(self, name: str, **kwargs):
-        """
-        Call a registered tool by name.
-        """
-        pass
+        tool_fn = self.tools.get(name)
+        if tool_fn is None:
+            raise ValueError(f"Tool '{name}' is not registered")
+        return tool_fn(**kwargs)
