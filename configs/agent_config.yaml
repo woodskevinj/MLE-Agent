@@ -1,0 +1,5 @@
+# Agent configuration (template)
+
+llm_provider: openai
+model: gpt-5
+temperature: 0.2

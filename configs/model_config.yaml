@@ -1,0 +1,3 @@
+# Placeholder ML model config
+
+default_target_column: "Churn"

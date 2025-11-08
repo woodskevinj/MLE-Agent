@@ -1,0 +1,6 @@
+# Tool configuration (template)
+
+active_tools:
+  - file_tools
+  - ml_tools
+  - python_tools

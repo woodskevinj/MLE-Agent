@@ -1,4 +1,15 @@
-# MLE-Agent
+# 🤖 MLE-Agent
+
+A lightweight Machine Learning Engineering Assistant that helps:
+
+- analyze datasets
+- generate ML code
+- build project scaffolds
+- create Dockerfiles
+- help with AWS templates
+- support ML engineering workflows
+
+This is the **starter template** version — core logic intentionally unfinished so it can be built step-by-step.
 
 ## ✅ Full Project Layout
 

@@ -3,6 +3,7 @@
 # ------------------------------
 __pycache__/
 *.py[cod]
+*.pyc
 *.pyo
 *.pyd
 *.so
@@ -39,6 +40,7 @@ data/**/*.xlsx
 data/**/*.parquet
 data/**/*.json
 data/**/*.zip
+data/telco/*.csv
 
 # Allow data README
 !data/README.md
@@ -88,3 +90,4 @@ docker-build/
 dist/
 build/
 *.egg-info/
+.cache/
