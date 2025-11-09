@@ -2,53 +2,41 @@
 Executes planned steps using available tools
 """
 
-from agent.core import AgentCore
+# from agent.core import AgentCore
+from agent.debug import log
 
 
 class Executor:
-    def __init__(self, tools=None):
-        # tools can be a ToolRegistry or a plain dict {name: fn}
-        self.core = AgentCore()
-        self.tools = tools or {}
+    def __init__(self, core, tools):
+        self.core = core
+        self.tools = tools
         
-        
-        
-    def execute_steps(self, step: dict):
+    def execute_steps(self, steps):
         """
-        Executes a single planning step.
-        Expected shape (MVP):
-            {"type": "llm", "input": "some prompt"}
-            or {"type": "tool", "name": "read_file", "kwargs": {...}}
+        Execute a list of steps in order
         """
-        step_type = step.get("type")
 
-        # LLM call
-        if step_type == "llm":
-            return self.core.generate(step["input"])
-        
-        # Tool call
-        if step_type == "tool":
-            name = step["name"]
-            kwargs = step.get("kwargs", {})
-            return self.tools.call(name, **kwargs)
-            # ToolRegistry has .call; plain dict has callable values
-            #if hasattr(self.tools, "call"):
-                # return self.tools.call(name, **kwargs)
-            # tool_fn = self.tools.get(name)
-            # if tool_fn is None:
-            #     raise ValueError(f"Tool '{name}' not registered")
-            # return tool_fn(**kwargs)
-        
-        raise ValueError(f"Unknown step type: {step_type}")
+        if isinstance(steps, dict):
+            steps = [steps]
 
-        # action = step.get("action")
+        last_output = None
 
-        # if action == "llm":
-        #     # call the llm with the given input
-        #     return self.core.generate(step["input"])
-        
-        # if action == "respond":
-        #     return step["input"]
-        
-        # #unknown action
-        # return f"Unknown action: {action}"
+        for step in steps:
+            stype = step.get("type")
+            log(f"[Executor] STEP: {step}")
+
+            if stype == "tool":
+                last_output = self.tools.call(step["name"], **step.get("kwargs", {}))
+                log(f"[Executor] TOOL OUTPUT: {last_output}")
+
+            elif stype == "llm":
+                prompt = step["input"]
+                if last_output:
+                    prompt += f"\n\nPrevious result:\n{last_output}"
+                last_output = self.core.generate(prompt)
+                log(f"[Executor] LLM OUTPUT: {last_output}")
+
+            else:
+                raise ValueError(f"Unknown step type: {stype}")
+            
+        return last_output

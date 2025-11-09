@@ -9,96 +9,130 @@
 - generate ML project scaffolds
 - and fall back to LLM responses when needed
 
-This project demonstrates how to build a real agent architecture (Planner → Executor → Tools → LLM) step by step.
+This project demonstrates a real-world **agent architecture**:  
+**Planner → Executor → Tools → LLM → Result**
+
+It is designed to be modular, extensible, and easy to grow into a full ML engineering assistant.
 
 ---
 
 ## ✅ Current Capabilities
 
-### 🔹 Natural Language Planning (New!)
+### 🔹 Natural Language Planning (Planner v3)
 
-The agent can analyze your text and determine what action to take:
+The agent converts plain English into a sequence of executable steps. Examples:
 
-- “Read file notes.txt” → uses `read_file`
-- “Write this to file x.py: …” → uses `write_file`
-- “Run python: print(3\*7)” → uses `run_python`
-- “Create a new project called fraud_model in ./projects” → uses `generate_scaffold`
-- Anything else → LLM response via OpenAI
+- “Read file notes.txt”
+- “Run python: print(3\*7)”
+- “Write this to file report.md: Hello!”
+- “Create a new project called churn_model in projects”
+- “Read file x, then run python y, then write result to z”
+- “Explain this” → LLM fallback
 
-This is powered by a rule-based intent detector in `planner.py`.
+The planner understands synonyms, handles uppercase/lowercase, and supports multi-step chained commands.
 
 ---
 
 ### 🔹 Implemented Tools
 
-| Tool Name           | Description                           |
-| ------------------- | ------------------------------------- |
-| `read_file`         | Read text files from disk             |
-| `write_file`        | Create/overwrite files                |
-| `run_python`        | Execute Python code in a sandbox      |
-| `generate_scaffold` | Generate ML project folder structures |
+| Tool Name           | Description                                     |
+| ------------------- | ----------------------------------------------- |
+| `read_file`         | Read a text file from disk                      |
+| `write_file`        | Write or overwrite a file                       |
+| `run_python`        | Safely execute Python code (isolated namespace) |
+| `generate_scaffold` | Create a project directory with starter files   |
 
-More tools coming soon:
+More tools planned:
 
-- ML/EDA tools
-- SHAP explainability
-- Docker tools
-- Git helpers
+- EDA + ML model training helpers
+- SHAP explainability modules
+- Docker helpers
+- Git + linting helpers
 - AWS ECR/ECS deployment helpers
 
 ---
 
-## ✅ Architecture
+## ✅ Architecture Overview
 
-**Planner → Executor → Tools → LLM → Result**
+User → Planner → Executor → Tools/LLM → Result
 
-- **Planner**  
-  Detects user intent using natural language  
-  Creates a list of steps (`type="tool"` or `type="llm"`)
+### **Planner (planner.py)**
 
-- **Executor**  
-  Runs the steps in order  
-  Calls tools or LLM depending on step type
+- Rule-based intent detector
+- Splits multi-step natural language commands
+- Detects file actions, Python execution, scaffold generation
+- Falls back to LLM when no tool matches
 
-- **Tools**  
-  Reusable actions for Python execution, file IO, scaffold generation, etc.
+### **Executor (executor.py)**
 
-- **LLM Core**  
-  Uses OpenAI’s new Responses API (`client.responses.create`)
+- Executes each step sequentially
+- Calls tools or LLM
+- Passes outputs to the next step
+- Supports optional DebugMode logging
 
-This architecture is modular, clean, and expandable.
+### **Tools (tools/\*.py)**
 
----
+Small, composable functions:
+
+- File I/O
+- Python execution
+- Project generation
+
+Tools can be added by simply registering them.
+
+### **LLM Core (core.py)**
+
+Uses OpenAI’s modern client:
+
+```python
+client.responses.create(model="gpt-4o-mini", input="...")
+```
+
+LLM is used only when:
+
+- Planner detects "explain", "summarize", etc.
+
+- No tool-based intent is found
+
+### Debug Mode (debug.py)
+
+```python
+DEBUG = False
+log("message")
+```
+
+## Central control for agent logging.
 
 ## ✅ Example Usage
 
-### 1. Run a natural language agent query
+### 1. Run the multi-step test
 
 ```bash
-python -m scripts.test_planner
+python -m scripts.test_multistep
 ```
 
-Produces results like:
+Example output:
 
-```vbnet
-USER: Read file test-output.txt
-AGENT: Hello from MLE-Agent!
-
-USER: Run python: print(3*7)
-AGENT: 21
-
-USER: Create a new project called churn_model in .
-AGENT: Project scaffold created at: ./churn_model
-
+```arduino
+USER: Read file demo.txt and then run python: print(2+2) and then write this to file result.txt: done
+RESULT: File written: result.txt
 ```
 
-LLM fallback example:
+### 2. Tool + LLM mixed output
 
-```vbnet
-USER: What is cross validation?
-AGENT: Cross-validation is a statistical technique used...
-
+```kotlin
+USER: Run python: print(10*5) and then explain this
+RESULT: The code prints 50...
 ```
+
+### 3. Project generation
+
+```sql
+USER: Create a new project called fraud_model in .
+RESULT: Project scaffold created at ./fraud_model
+```
+
+---
 
 ## ✅ Project Structure
 
@@ -106,38 +140,49 @@ AGENT: Cross-validation is a statistical technique used...
 MLE-Agent/
 │
 ├── agent/
-│   ├── core.py            # OpenAI interface (Responses API)
-│   ├── planner.py         # Natural-language intent detection (v1)
-│   ├── executor.py        # Executes tools & LLM calls
-│   ├── memory.py          # Future: persistent agent memory
-│   └── tools.py           # Tool registry
+│   ├── __init__.py
+│   ├── agent.py              # main agent orchestrator
+│   ├── core.py               # LLM wrapper (OpenAI API)
+│   ├── planner.py            # Planner v3 (robust NL -> actions)
+│   ├── executor.py           # Executor v2 (sequential execution)
+│   ├── tools.py              # Tool registry
+│   └── debug.py              # DEBUG toggle + log() helper
 │
 ├── tools/
-│   ├── file_tools.py      # read/write files
-│   ├── python_tools.py    # run python safely
-│   ├── project_tools.py   # scaffold generator
-│   ├── ml_tools.py        # future ML/EDA utilities
-│   ├── docker_tools.py    # future Docker helpers
-│   ├── git_tools.py       # future Git helpers
-│   └── aws_tools.py       # future AWS helpers
+│   ├── __init__.py
+│   ├── file_tools.py         # read_file, write_file
+│   ├── python_tools.py       # run_python()
+│   └── project_tools.py      # generate_scaffold()
 │
 ├── api/
-│   └── main.py            # (soon) FastAPI interface
-│
-├── scripts/
-│   ├── test_agent_local.py
-│   ├── test_python_tool.py
-│   ├── test_scaffold.py
-│   └── test_planner.py
+│   ├── __init__.py
+│   └── main.py               # FastAPI endpoint (not implemented yet)
 │
 ├── configs/
-│   └── (YAML configuration files)
-│
-├── tests/
-│   └── (unit tests)
+│   ├── agent_config.yaml     # future—config-driven behavior
+│   ├── model_config.yaml
+│   └── tools_config.yaml
 │
 ├── data/
+│   ├── telco/
+│   │   └── WA_Fn-UseC_-Telco-Customer-Churn.csv
 │   └── README.md
+│
+├── notebooks/
+│   ├── agent_walkthrough.ipynb
+│   └── examples.ipynb
+│
+├── scripts/
+│   ├── test_agent_local.py   # direct agent test
+│   ├── test_python_tool.py   # python exec tool test
+│   ├── test_multistep.py     # multistep chain test
+│   ├── run_agent.py          # run agent from CLI
+│   └── cli_demo.py           # interactive CLI
+│
+├── tests/
+│   ├── test_agent.py
+│   ├── test_tools.py
+│   └── test_end_to_end.py
 │
 ├── Dockerfile
 ├── requirements.txt
@@ -152,45 +197,65 @@ MLE-Agent/
 
 Make sure you have:
 
-- Python 3.10+
+1. Python 3.10+
 
-- Virtual environment activated
+2. Virtual environment activated
 
-- Install dependencies:
+3. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Set your OpenAI API key (https://platform.openai.com/api-keys):
+4. Set your OpenAI API key (https://platform.openai.com/api-keys):
 
-```arduino
+```bash
 export OPENAI_API_KEY="your-key"
 ```
 
+---
+
 ## ✅ Roadmap
 
-Next Steps (coming up next)
+### Next Steps (coming up next)
 
 ✅ Multi-step tool chaining
 
-✅ More advanced planner logic
+✅ Planner v3 (synonyms, case-insensitive, code-preserving)
 
-✅ EDA + ML training tools
+✅ Executor v2
 
-✅ SHAP explainability
+✅ Python + file I/O tools
 
-✅ FastAPI /agent/query endpoint
+✅ Project scaffold tool
 
-✅ Docker deployment
+### Coming Next
+
+⬜ ML/EDA tools
+
+⬜ SHAP explainability
+
+⬜ Dataset analysis
+
+⬜ FastAPI agent endpoint (/agent/query)
+
+⬜ Memory module (vector store)
+
+⬜ Context history + tool reflection
+
+⬜ Docker containerization
+
+⬜ AWS ECR/ECS deploy option
 
 ---
 
 ## 🚀 Status
 
-MLE-Agent is now a functional, extensible agent framework with:
+MLE-Agent is now a fully functional, modular agent framework with:
 
-✅ Natural-language intent detection
+✅ Natural language intent detection
+
+✅ Multi-step planning
 
 ✅ Tool routing
 
@@ -198,17 +263,19 @@ MLE-Agent is now a functional, extensible agent framework with:
 
 ✅ File operations
 
-✅ Project scaffold generation
+✅ Project generation
 
-✅ Full agent loop behavior
+✅ LLM fallback
 
-This is a professional-grade foundation for building a modern ML engineering assistant.
+✅ Clean architecture
+
+This is a strong foundation for building a **real AI-powered ML engineering assistant**.
 
 ---
 
-👨‍💻 Author
+## 👨‍💻 Author
 
-# Kevin Woods
+### Kevin Woods
 
 Applied ML Engineer
 
