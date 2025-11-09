@@ -1,75 +1,104 @@
 # 🤖 MLE-Agent
 
-A lightweight **Machine Learning Engineering Assistant** designed to help you rapidly build ML projects, run code, analyze datasets, create files, and scaffold full project structures.
+**MLE-Agent** is a lightweight Machine Learning Engineering Assistant that can:
 
-This project is built step-by-step, demonstrating how to construct a real LLM-powered agent system with tools, planning, and execution.
+- understand natural language requests
+- decide which tools to use
+- execute Python code safely
+- read/write files
+- generate ML project scaffolds
+- and fall back to LLM responses when needed
+
+This project demonstrates how to build a real agent architecture (Planner → Executor → Tools → LLM) step by step.
 
 ---
 
 ## ✅ Current Capabilities
 
-MLE-Agent currently supports:
+### 🔹 Natural Language Planning (New!)
 
-### ✅ Core LLM Engine
+The agent can analyze your text and determine what action to take:
 
-- Uses OpenAI’s latest **Responses API**
-- Model: **gpt-4o-mini** (configurable)
-- Clean, modular Core class for generation
+- “Read file notes.txt” → uses `read_file`
+- “Write this to file x.py: …” → uses `write_file`
+- “Run python: print(3\*7)” → uses `run_python`
+- “Create a new project called fraud_model in ./projects” → uses `generate_scaffold`
+- Anything else → LLM response via OpenAI
 
-### ✅ Working Agent Loop
-
-- Planner → creates step list
-- Executor → runs LLM or tools
-- Memory (stubbed, ready for future expansion)
-
-### ✅ Implemented Tools
-
-Right now, MLE-Agent can:
-
-✅ **read files**  
-✅ **write files**  
-✅ **execute Python code** (sandboxed)  
-✅ **generate project scaffolds** (folders + README)
-
-This makes it capable of:
-
-- running pandas code
-- manipulating data
-- generating starter ML project layouts
-- preparing notebooks, scripts, and pipelines
-- reading/writing intermediate data or configs
-
-And we’ll expand more tool categories soon (Docker, Git, AWS, ML training, etc.)
+This is powered by a rule-based intent detector in `planner.py`.
 
 ---
 
-## ✅ Example Usage (Local Test)
+### 🔹 Implemented Tools
 
-### Run a simple agent query:
+| Tool Name           | Description                           |
+| ------------------- | ------------------------------------- |
+| `read_file`         | Read text files from disk             |
+| `write_file`        | Create/overwrite files                |
+| `run_python`        | Execute Python code in a sandbox      |
+| `generate_scaffold` | Generate ML project folder structures |
 
-```bash
-python -m scripts.test_agent_local
-```
+More tools coming soon:
 
-You’ll see a real LLM response from the agent:
-
-```css
-A decision tree is a flowchart-like model...
-```
-
-Run Python execution:
-
-```bash
-python -m scripts.test_python_tool
-```
-
-Generate a project scaffold:
-
-```bash
-python -m scripts.test_scaffold
-```
+- ML/EDA tools
+- SHAP explainability
+- Docker tools
+- Git helpers
+- AWS ECR/ECS deployment helpers
 
 ---
+
+## ✅ Architecture
+
+**Planner → Executor → Tools → LLM → Result**
+
+- **Planner**  
+  Detects user intent using natural language  
+  Creates a list of steps (`type="tool"` or `type="llm"`)
+
+- **Executor**  
+  Runs the steps in order  
+  Calls tools or LLM depending on step type
+
+- **Tools**  
+  Reusable actions for Python execution, file IO, scaffold generation, etc.
+
+- **LLM Core**  
+  Uses OpenAI’s new Responses API (`client.responses.create`)
+
+This architecture is modular, clean, and expandable.
+
+---
+
+## ✅ Example Usage
+
+### 1. Run a natural language agent query
+
+```bash
+python -m scripts.test_planner
+```
+
+Produces results like:
+
+```vbnet
+USER: Read file test-output.txt
+AGENT: Hello from MLE-Agent!
+
+USER: Run python: print(3*7)
+AGENT: 21
+
+USER: Create a new project called churn_model in .
+AGENT: Project scaffold created at: ./churn_model
+
+```
+
+LLM fallback example:
+
+```vbnet
+USER: What is cross validation?
+AGENT: Cross-validation is a statistical technique used...
+
+```
 
 ## ✅ Project Structure
 
@@ -77,54 +106,44 @@ python -m scripts.test_scaffold
 MLE-Agent/
 │
 ├── agent/
-│   ├── __init__.py
-│   ├── core.py                # LLM interface (OpenAI Responses API)
-│   ├── planner.py             # generates multi-step plans
-│   ├── memory.py              # vector + short-term memory (future)
-│   ├── executor.py            # executes steps + tool calls
-│   └── tools.py               # tool registry & dispatch system
+│   ├── core.py            # OpenAI interface (Responses API)
+│   ├── planner.py         # Natural-language intent detection (v1)
+│   ├── executor.py        # Executes tools & LLM calls
+│   ├── memory.py          # Future: persistent agent memory
+│   └── tools.py           # Tool registry
 │
 ├── tools/
-│   ├── __init__.py
-│   ├── file_tools.py          # read/write files
-│   ├── python_tools.py        # execute python safely
-│   ├── project_tools.py       # project scaffold generator
-│   ├── ml_tools.py            # (future) EDA, training, SHAP
-│   ├── docker_tools.py        # (future) Docker helpers
-│   ├── git_tools.py           # (future) Git commit helpers
-│   └── aws_tools.py           # (future) AWS templates / ECR/ECS
+│   ├── file_tools.py      # read/write files
+│   ├── python_tools.py    # run python safely
+│   ├── project_tools.py   # scaffold generator
+│   ├── ml_tools.py        # future ML/EDA utilities
+│   ├── docker_tools.py    # future Docker helpers
+│   ├── git_tools.py       # future Git helpers
+│   └── aws_tools.py       # future AWS helpers
 │
 ├── api/
-│   ├── __init__.py
-│   └── main.py                # (soon) FastAPI interface
-│
-├── configs/
-│   ├── agent_config.yaml
-│   ├── model_config.yaml
-│   └── tools_config.yaml
-│
-├── data/
-│   └── README.md
-│
-├── notebooks/
-│   ├── agent_walkthrough.ipynb
-│   └── examples.ipynb
+│   └── main.py            # (soon) FastAPI interface
 │
 ├── scripts/
 │   ├── test_agent_local.py
 │   ├── test_python_tool.py
 │   ├── test_scaffold.py
-│   └── run_agent.py
+│   └── test_planner.py
+│
+├── configs/
+│   └── (YAML configuration files)
 │
 ├── tests/
-│   ├── test_agent.py
-│   ├── test_tools.py
-│   └── test_end_to_end.py
+│   └── (unit tests)
+│
+├── data/
+│   └── README.md
 │
 ├── Dockerfile
 ├── requirements.txt
 ├── .gitignore
 └── README.md
+
 ```
 
 ---
@@ -153,47 +172,37 @@ export OPENAI_API_KEY="your-key"
 
 Next Steps (coming up next)
 
-✅ Add real planning logic
+✅ Multi-step tool chaining
 
-- agent decides when to use LLM vs tools
-- multi-step workflows
-- tool-chaining
+✅ More advanced planner logic
 
-Future Milestones
-
-✅ EDA tools
-
-✅ Model training tool
+✅ EDA + ML training tools
 
 ✅ SHAP explainability
 
-✅ FastAPI endpoint /agent/query
+✅ FastAPI /agent/query endpoint
 
 ✅ Docker deployment
-
-✅ Git integration
-
-✅ AWS (ECR/ECS) helpers
 
 ---
 
 ## 🚀 Status
 
-MLE-Agent is now an actively working prototype with:
+MLE-Agent is now a functional, extensible agent framework with:
 
-- a functioning agent loop
+✅ Natural-language intent detection
 
-- OpenAI integration
+✅ Tool routing
 
-- tool execution
+✅ Python execution
 
-- Python sandbox
+✅ File operations
 
-- file operations
+✅ Project scaffold generation
 
-- full scaffold generator
+✅ Full agent loop behavior
 
-This is now a professional-grade starting point for building a real ML engineering assistant.
+This is a professional-grade foundation for building a modern ML engineering assistant.
 
 ---
 
