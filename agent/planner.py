@@ -10,7 +10,7 @@ class Planner:
     def __init__(self, memory=None):
         # Add memory moduel if avail
         self.memory = memory
-        
+
         # Natural language sequence markers (case-insensitive)
         self.splitter_pattern = r"(?i)\b(?:and then|then|next|after that|followed by|and)\b"
         
@@ -101,6 +101,66 @@ class Planner:
                         "project_name": m.group(2),
                         "base_path": m.group(3)
                     }
+                }
+            
+        # LOAD CSV
+        csv_patterns = [
+            r"(load|read)\s+(?:the\s+)?csv\s+file\s+([^\s]+)",
+            r"(load|read)\s+([^\s]+\.csv)"
+        ]
+        for pat in csv_patterns:
+            m = re.search(pat, clause_lower)
+            if m:
+                return {
+                    "type": "tool",
+                    "name": "load_csv",
+                    "kwargs": {"path": m.group(2)}
+                }
+            
+        # PREVIEW DATA
+        preview_patterns = [
+            r"(show|preview|display)\s+(?:the\s+)?data(?:\s+head)?",
+            r"(show|preview)\s+first\s+(\d+)\s+rows"
+        ]
+        for pat in preview_patterns:
+            m = re.search(pat, clause_lower)
+            if m:
+                n = 5
+                if len(m.groups()) >= 2 and m.group(2).isdigit():
+                    n = int(m.group(2))
+                return {
+                    "type": "tool",
+                    "name": "preview_data",
+                    "kwargs": {"n": n}
+                }
+            
+        # DESCRIBE DATA
+        describe_patterns = [
+            r"(describe|summarize)\s+(?:the\s+)?data",
+            r"data\s+summary"
+        ]
+        for pat in describe_patterns:
+            m = re.search(pat, clause_lower)
+            if m:
+                return {
+                    "type": "tool",
+                    "name": "describe_data",
+                    "kwargs": {}
+                }
+            
+        # COLUMN INFO
+        colinfo_patterns = [
+            r"(show|list)\s+(?:the\s+)?columns",
+            r"(column|columns)\s+info"
+        ]
+
+        for pat in colinfo_patterns:
+            m = re.search(pat, clause_lower)
+            if m:
+                return {
+                    "type": "tool",
+                    "name": "column_info",
+                    "kwargs": {}
                 }
         
         # ---------------------------

@@ -11,6 +11,7 @@ from agent.memory.module import MemoryModule # ✅ MEMORY
 from tools.file_tools import read_file, write_file
 from tools.python_tools import run_python
 from tools.project_tools import generate_scaffold
+from tools.eda_tools import load_csv, preview_data, describe_data, column_info
 
 
 class Agent:
@@ -30,6 +31,10 @@ class Agent:
         self.tools.register("write_file", write_file)
         self.tools.register("run_python", run_python)
         self.tools.register("generate_scaffold", generate_scaffold)
+        self.tools.register("load_csv", load_csv)
+        self.tools.register("preview_data", preview_data)
+        self.tools.register("describe_data", describe_data)
+        self.tools.register("column_info", column_info)
 
         # ✅ Pass memory into Executor
         self.executor = Executor(self.core, self.tools, memory=self.memory)
