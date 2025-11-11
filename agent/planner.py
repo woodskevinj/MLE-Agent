@@ -7,17 +7,13 @@ from agent.debug import log
 
 
 class Planner:
-    def __init__(self):
+    def __init__(self, memory=None):
+        # Add memory moduel if avail
+        self.memory = memory
+        
         # Natural language sequence markers (case-insensitive)
         self.splitter_pattern = r"(?i)\b(?:and then|then|next|after that|followed by|and)\b"
-        # self.splitters = [
-        #     r"\band then\b",
-        #     r"\bthen\b",
-        #     r"\bnext\b",
-        #     r"\bafter that\b",
-        #     r"\bfollowed by\b",
-        #     r"\band\b"
-        # ]
+        
 
     def _split_into_steps(self, text: str):
         """
@@ -123,5 +119,20 @@ class Planner:
         if not plan:
             return [{"type": "llm", "input": user_input}]
         
-        log(f"[Planner] Final plan: {plan}")
-        return plan
+        # log(f"[Planner] Final plan: {plan}")
+        # return plan
+        log(f"[Planner] Final plan (before memory): {plan}")
+
+        # =====================================================
+        # ✅ MEMORY CONTEXT
+        # =====================================================
+        mem_ctx = ""
+        if self.memory:
+            mem_ctx = self.memory.context(task=user_input, token_budget_chars=2400)
+
+        return {
+            "plan": plan,
+            "memory_context": mem_ctx
+        }
+
+    
