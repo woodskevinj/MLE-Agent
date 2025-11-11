@@ -100,3 +100,4 @@ agent_memory.db-wal
 demo.txt
 result.txt
 *.txt
+churn_model/

@@ -162,6 +162,58 @@ class Planner:
                     "name": "column_info",
                     "kwargs": {}
                 }
+            
+        # TRAIN/TEST SPLIT
+        split_patterns = [
+            r"(split|train test split|train\/test)\s+data",
+            r"split\s+the\s+data"
+        ]
+        for pat in split_patterns:
+            m = re.search(pat, clause_lower)
+            if m:
+                return {
+                    "type": "tool",
+                    "name": "split_data",
+                    "kwargs": {}
+                }
+            
+        encode_patterns = [
+            r"(encode|transform)\s+(categorical|categoricals|categories)",
+            r"encode\s+categoricals"
+        ]
+        for pat in encode_patterns:
+            m = re.search(pat, clause_lower)
+            if m:
+                return {
+                    "type": "tool",
+                    "name": "encode_categoricals",
+                    "kwargs": {}
+                }
+            
+        scale_patterns = [
+            r"(scale|standardize|normalize)\s+(numerical|numeric|numbers)",
+            r"scale\s+numerical"
+        ]
+        for pat in scale_patterns:
+            m = re.search(pat, clause_lower)
+            if m:
+                return {
+                    "type": "tool",
+                    "name": "scale_numericals",
+                    "kwargs": {}
+                }
+            
+        save_patterns = [
+            r"(save|export)\s+(?:the\s+)?dataframe\s+to\s+([^\s]+)",
+        ]
+        for pat in save_patterns:
+            m = re.search(pat, clause_lower)
+            if m:
+                return {
+                    "type": "tool",
+                    "name": "save_dataframe",
+                    "kwargs": {"path": m.group(2)}
+                }
         
         # ---------------------------
         # DEFAULT -> LLM

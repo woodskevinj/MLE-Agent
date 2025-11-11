@@ -6,7 +6,7 @@ import pandas as pd
 from typing import Optional
 
 
-def load_csv(path: str) -> str:
+def load_csv(state, path: str) -> str:
     """
     Load a CSV file and return a quick summary
     - shape
@@ -15,11 +15,9 @@ def load_csv(path: str) -> str:
     """
     try:
         df = pd.read_csv(path)
+        state["df"] = df
     except Exception as e:
         return f"Error loading CSV: {e}"
-    
-    # Store in global cache for later tools
-    _GLOBAL_CACHE['df'] = df
 
     return (
         f"CSV loaded successfully.\n"
@@ -27,22 +25,23 @@ def load_csv(path: str) -> str:
         f"Columns: {list(df.columns)}"
     )
 
-def preview_data(n: int = 5) -> str:
+def preview_data(state, n: int = 5) -> str:
     """
     Return the top n rows as a string.
     Requires that load_csv() was called first.
     """
-    df = _GLOBAL_CACHE.get('df')
+    df = state.get("df")
+
     if df is None:
         return "No datafram loaded. Use load_csv <path> first."
     
     return df.head(n).to_string()
 
-def describe_data() -> str:
+def describe_data(state) -> str:
     """
     Returns summary statistics, missing counts, and dtypes.
     """
-    df = _GLOBAL_CACHE.get('df')
+    df = state.get("df")
     if df is None:
         return "No dataframe loaded.  Use load_csv <path> first."
     
@@ -57,13 +56,13 @@ def describe_data() -> str:
     )
 
 
-def column_info() -> str:
+def column_info(state) -> str:
     """
     Returns column classification:
     - numerical columns
     - categorical columns
     """
-    df = _GLOBAL_CACHE.get('df')
+    df = state.get("df")
     if df is None:
         return "No dataframe loaded. Use load_csv <path> first."
     
@@ -75,8 +74,3 @@ def column_info() -> str:
         f"Categorical Columns: {categorical}"
     )
 
-
-# -------------------------------------
-# Simple global cache for the session
-# -------------------------------------
-_GLOBAL_CACHE = {}

@@ -8,6 +8,9 @@ from agent.executor import Executor
 from agent.tools import ToolRegistry
 from agent.memory.module import MemoryModule # ✅ MEMORY
 
+from tools.feature_tools import (
+    split_data, encode_categoricals, scale_numericals, save_dataframe
+)
 from tools.file_tools import read_file, write_file
 from tools.python_tools import run_python
 from tools.project_tools import generate_scaffold
@@ -35,6 +38,10 @@ class Agent:
         self.tools.register("preview_data", preview_data)
         self.tools.register("describe_data", describe_data)
         self.tools.register("column_info", column_info)
+        self.tools.register("split_data", split_data)
+        self.tools.register("encode_categoricals", encode_categoricals)
+        self.tools.register("scale_numericals", scale_numericals)
+        self.tools.register("save_dataframe", save_dataframe)
 
         # ✅ Pass memory into Executor
         self.executor = Executor(self.core, self.tools, memory=self.memory)
