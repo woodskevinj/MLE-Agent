@@ -52,11 +52,11 @@ MLE-Agent now includes a full Memory Module with:
 - **Planner Context Injection**:
   When the user issues a new request, Planner automatically receives a memory_context block containing:
 
-* task-relevant memories
+  - task-relevant memories
 
-* recent agent history
+  - recent agent history
 
-* pinned or high-importance facts
+  - pinned or high-importance facts
 
 This makes the agent more stable across sessions and more capable of multi-step reasoning.
 
