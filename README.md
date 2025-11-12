@@ -8,6 +8,7 @@
 - read/write files
 - generate ML project scaffolds
 - store and recall memory
+- perform EDA and feature engineering
 - and fall back to LLM responses when needed
 
 This project demonstrates a real-world **agent architecture**:  
@@ -21,44 +22,45 @@ It is designed to be modular, extensible, and easy to grow into a full ML engine
 
 ### 🔹 Natural Language Planning (Planner v3)
 
-The agent converts plain English into a sequence of executable steps. Examples:
+The agent converts plain English into a sequence of executable steps:
 
-- file read/write
+- read/write files
 
-- Python execution
+- run Python
 
-- Project scaffolding
+- generate project scaffolds
 
-- LLM fallback
+- load CSV data
+
+- preview or summarize data
+
+- feature engineering steps
+
+- and fallback to LLM when needed
 
 The planner understands synonyms, handles uppercase/lowercase, and supports multi-step chained commands.
 
 ### 🔹 Memory-Aware Planning (NEW)
 
-MLE-Agent now includes a full Memory Module with:
+MLE-Agent includes a full Memory Module with:
 
-- **Episodic Memory**:
+- **Episodic Memory** (tool calls, outcomes, LLM results)
 
-  Stores tool calls, LLM responses, errors, outcomes.
+- **Semantic Memory** (long-lived facts, preferences, project info)
 
-- **Semantic Memory**:
+- **Fast Recall** via SQLite FTS5 + BM25 + recency scoring
 
-  Stores long-lived knowledge like project details, user preferences, or environment rules.
+- **Automatic context injection** into Planner to improve reasoning
 
-- **Automatic recall**:
+Planner automatically receives:
 
-  Memory is retrieved via SQLite FTS5 (BM25 ranking) + recency + importance scoring.
+- task-relevant memories
 
-- **Planner Context Injection**:
-  When the user issues a new request, Planner automatically receives a memory_context block containing:
+- recent session history
 
-  - task-relevant memories
+- pinned/important facts
 
-  - recent agent history
-
-  - pinned or high-importance facts
-
-This makes the agent more stable across sessions and more capable of multi-step reasoning.
+Executor logs tool + LLM outcomes back to memory.
 
 ---
 
@@ -70,6 +72,18 @@ This makes the agent more stable across sessions and more capable of multi-step 
 | `write_file`        | Write or overwrite a file                       |
 | `run_python`        | Safely execute Python code (isolated namespace) |
 | `generate_scaffold` | Create starter ML project structures            |
+| load_csv            | Load a CSV dataset into agent state             |
+| preview_data        | Show first N rows of loaded dataset             |
+| describe_data       | Full dataset summary (stats, types, missing)    |
+| column_info         | List numerical and categorical columns          |
+| encode_categoricals | One-hot encode categorical features             |
+| scale_numericals    | Scale numerical features                        |
+| split_data          | Train/test split of dataset                     |
+| save_dataframe      | Save transformed data                           |
+
+All EDA + feature tools operate on a shared tool state, so each step can depend on the previous one (like a real ML pipeline).
+
+---
 
 Planned future tools:
 
@@ -97,39 +111,35 @@ User → Planner → **Memory Context** → LLM (optional plan refinement) → E
 
 - Now includes memory_context for richer planning
 
-### **Memory Module (agent/memory/\*)**
+### **Memory System (agent/memory/\*)**
 
-- store.py: SQLite FTS5 memory backend
+- SQLite FTS5 store
 
-- models.py: Memory objects (episodic, semantic)
+- BM25 ranking
 
-- ranking.py: BM25 + recency + importance reranking
+- Episodic + semantic memory
 
-- module.py: High-level memory API:
+- recall(), remember(), context(), recent()
 
-  - remember()
+### **Tools System (agent/tools.py)**
 
-  - recall()
+- Shared state dict across all tools
 
-  - context()
+- Allows sequential data operations
 
-  - recent()
-
-Planner uses memory.context() before forming a plan.
-
-Executor logs all outcomes back into memory.
+- Used by EDA + feature engineering tools
 
 ### **Executor (executor.py)**
 
-- Executes tool actions or LLM responses
+- Runs each planned step
 
-- Feeds results into the next step
+- Handles tool routing or LLM calls
 
-- Logs episodic memories after every tool or LLM output
+- Logs all results to memory
 
 ### **LLM Core (core.py)**
 
-Simple interface around OpenAI’s SDK using:
+Uses OpenAI’s modern API:
 
 ```python
 client.responses.create(model="gpt-4o-mini", input="...")
@@ -144,6 +154,18 @@ USER: Run python: print(5*5)
 
 USER: What did I run earlier?
 RESULT: Based on memory: You ran print(5*5) and the output was 25.
+```
+
+---
+
+## ✅ Data + Feature Example
+
+```bash
+USER: load csv file data/telco/WA_Fn-UseC_-Telco-Customer-Churn.csv
+USER: encode categoricals
+USER: scale numericals
+USER: split data
+USER: save dataframe to data/telco/transformed.csv
 ```
 
 ---
@@ -170,11 +192,14 @@ MLE-Agent/
 ├── tools/
 │   ├── file_tools.py
 │   ├── python_tools.py
-│   └── project_tools.py
+│   ├── project_tools.py
+│   ├── eda_tools.py
+│   └── feature_tools.py
 │
 ├── scripts/
 │   ├── test_agent_local.py
 │   ├── test_multistep.py
+│   ├── test_feature_tools.py
 │   ├── run_agent.py
 │   └── cli_demo.py
 │
@@ -187,6 +212,7 @@ MLE-Agent/
 ├── requirements.txt
 ├── .gitignore
 └── README.md
+
 ```
 
 ---
@@ -217,33 +243,31 @@ export OPENAI_API_KEY="your-key"
 
 ### Next Steps (coming up next)
 
-✅ Multi-step tool chaining
+✅ Multi-step planning
 
-✅ Planner v3 (synonyms, case-insensitive, code-preserving)
+✅ Memory module (episodic + semantic)
 
-✅ Executor v2
-
-✅ Python + file I/O tools
+✅ Memory-aware planning
 
 ✅ Project scaffold tool
 
-✅ Memory Module (episodic + semantic)
+✅ Full EDA tool suite
 
-✅ Memory-aware planning & recall
+✅ Feature engineering tools
 
 ### Coming Next
 
-⬜ ML/EDA tools
+⬜ ML training tools (LogReg, RF, XGBoost)
+
+⬜ Model evaluation tools
 
 ⬜ SHAP explainability
-
-⬜ Dataset analysis
 
 ⬜ FastAPI agent endpoint (/agent/query)
 
 ⬜ Vector search memory (embeddings)
 
-⬜ Tool self-reflection
+⬜ Agent self-reflection
 
 ⬜ Docker containerization
 
@@ -253,27 +277,21 @@ export OPENAI_API_KEY="your-key"
 
 ## 🚀 Status
 
-MLE-Agent is now a memory-enabled agent framework with:
+MLE-Agent is now a memory-enabled, stateful ML assistant with:
 
-✅ Natural language intent detection
+✅ Natural language tool execution
 
 ✅ Multi-step planning
 
-✅ Memory-aware context
-
-✅ Tool routing
-
-✅ Python execution
-
-✅ File operations
+✅ EDA + Feature Engineering
 
 ✅ Project generation
 
+✅ Memory recall
+
 ✅ LLM fallback
 
-✅ Clean architecture
-
-A strong foundation for building a **true ML engineering assistant**.
+✅ Clean modular architecture
 
 ---
 
