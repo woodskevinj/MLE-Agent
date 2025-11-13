@@ -282,9 +282,13 @@ export OPENAI_API_KEY="your-key"
 MLE-Agent is now a memory-enabled ML assistant with:
 
 ✅ Natural language planning
+
 ✅ Memory-aware reasoning
+
 ✅ EDA + feature engineering
+
 ✅ Model training + saving
+
 ✅ Clean modular design
 
 A strong foundation for building a true Applied ML Engineering Agent.
