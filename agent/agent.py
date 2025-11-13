@@ -8,6 +8,7 @@ from agent.executor import Executor
 from agent.tools import ToolRegistry
 from agent.memory.module import MemoryModule # ✅ MEMORY
 
+from tools import ml_tools
 from tools.feature_tools import (
     split_data, encode_categoricals, scale_numericals, save_dataframe
 )
@@ -42,6 +43,9 @@ class Agent:
         self.tools.register("encode_categoricals", encode_categoricals)
         self.tools.register("scale_numericals", scale_numericals)
         self.tools.register("save_dataframe", save_dataframe)
+        self.tools.register("train_model", ml_tools.train_model)
+        self.tools.register("evaluate_model", ml_tools.evaluate_model)
+        self.tools.register("save_model", ml_tools.save_model)
 
         # ✅ Pass memory into Executor
         self.executor = Executor(self.core, self.tools, memory=self.memory)
