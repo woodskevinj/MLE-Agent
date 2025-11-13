@@ -9,6 +9,7 @@
 - generate ML project scaffolds
 - store and recall memory
 - perform EDA and feature engineering
+- train baseline ML models
 - and fall back to LLM responses when needed
 
 This project demonstrates a real-world **agent architecture**:  
@@ -24,19 +25,12 @@ It is designed to be modular, extensible, and easy to grow into a full ML engine
 
 The agent converts plain English into a sequence of executable steps:
 
-- read/write files
-
-- run Python
-
-- generate project scaffolds
-
-- load CSV data
-
-- preview or summarize data
-
-- feature engineering steps
-
-- and fallback to LLM when needed
+- file read/write
+- Python execution
+- project scaffolding
+- dataset loading and analysis
+- model training
+- LLM fallback
 
 The planner understands synonyms, handles uppercase/lowercase, and supports multi-step chained commands.
 
@@ -44,13 +38,13 @@ The planner understands synonyms, handles uppercase/lowercase, and supports mult
 
 MLE-Agent includes a full Memory Module with:
 
-- **Episodic Memory** (tool calls, outcomes, LLM results)
+- **Episodic Memory** — stores tool calls, LLM responses, outcomes
 
-- **Semantic Memory** (long-lived facts, preferences, project info)
+- **Semantic Memory** — stores project facts, user preferences, and persistent knowledge
 
-- **Fast Recall** via SQLite FTS5 + BM25 + recency scoring
+- **Automatic Recall** — powered by SQLite FTS5 + BM25 + recency + importance scoring
 
-- **Automatic context injection** into Planner to improve reasoning
+- **Planner context injection** - memory is automatically appended to the plan for richer context
 
 Planner automatically receives:
 
@@ -66,28 +60,26 @@ Executor logs tool + LLM outcomes back to memory.
 
 ### 🔹 Implemented Tools
 
-| Tool Name           | Description                                     |
-| ------------------- | ----------------------------------------------- |
-| `read_file`         | Read a text file from disk                      |
-| `write_file`        | Write or overwrite a file                       |
-| `run_python`        | Safely execute Python code (isolated namespace) |
-| `generate_scaffold` | Create starter ML project structures            |
-| load_csv            | Load a CSV dataset into agent state             |
-| preview_data        | Show first N rows of loaded dataset             |
-| describe_data       | Full dataset summary (stats, types, missing)    |
-| column_info         | List numerical and categorical columns          |
-| encode_categoricals | One-hot encode categorical features             |
-| scale_numericals    | Scale numerical features                        |
-| split_data          | Train/test split of dataset                     |
-| save_dataframe      | Save transformed data                           |
-
-All EDA + feature tools operate on a shared tool state, so each step can depend on the previous one (like a real ML pipeline).
+| Tool Name             | Description                                         |
+| --------------------- | --------------------------------------------------- |
+| `read_file`           | Read a text file from disk                          |
+| `write_file`          | Write or overwrite a file                           |
+| `run_python`          | Safely execute Python code                          |
+| `generate_scaffold`   | Create starter ML project structures                |
+| `load_csv`            | Load CSV datasets and preview structure             |
+| `preview_data`        | Display top rows of the current dataset             |
+| `describe_data`       | Show dataset statistics, missing values, and dtypes |
+| `column_info`         | Display numerical vs categorical columns            |
+| `encode_categoricals` | One-hot encode string columns for modeling          |
+| `scale_numericals`    | Standardize numeric columns                         |
+| `split_data`          | Split dataset into train/test sets                  |
+| `train_model`         | Train logistic or random forest model               |
+| `save_model`          | Persist trained models (auto-creates `/models`)     |
 
 ---
 
 Planned future tools:
 
-- EDA utilitites
 - ML model training helpers
 - SHAP explainability modules
 - Docker helpers
@@ -97,52 +89,86 @@ Planned future tools:
 
 ## ✅ Architecture Overview
 
-User → Planner → **Memory Context** → LLM (optional plan refinement) → Executor → Tools/LLM → **Memory Logging** → Result
+**User → Planner → Memory Context → LLM (optional plan refinement) → Executor → Tools/LLM → Memory Logging → Result**
 
-### **Planner (planner.py)**
+### 🧠 Planner (`planner.py`)
 
 - Rule-based intent detector
 
-- Splits multi-step language into structured actions
+- Splits multi-step natural language into structured actions
 
-- Detects known tool actions
+- Supports memory context injection before execution
 
-- Falls back to LLM when no pattern matches
+### 🗂️ Memory Module (`agent/memory/*`)
 
-- Now includes memory_context for richer planning
+- **store.py:** SQLite + FTS5 memory backend
+- **module.py:** high-level API for remember(), recall(), context(), and recent()
+- **ranking.py:** BM25 + recency + importance reranking
 
-### **Memory System (agent/memory/\*)**
+### ⚙️ Executor (`executor.py`)
 
-- SQLite FTS5 store
+- Executes tool or LLM steps
+- Logs outcomes into episodic memory after every run
 
-- BM25 ranking
+### 💬 LLM Core (`core.py`)
 
-- Episodic + semantic memory
-
-- recall(), remember(), context(), recent()
-
-### **Tools System (agent/tools.py)**
-
-- Shared state dict across all tools
-
-- Allows sequential data operations
-
-- Used by EDA + feature engineering tools
-
-### **Executor (executor.py)**
-
-- Runs each planned step
-
-- Handles tool routing or LLM calls
-
-- Logs all results to memory
-
-### **LLM Core (core.py)**
+- Wrapper around OpenAI’s `client.responses.create()`
+- Provides natural fallback answers for arbitrary questions
 
 Uses OpenAI’s modern API:
 
 ```python
 client.responses.create(model="gpt-4o-mini", input="...")
+```
+
+---
+
+## 🧪 EDA + Feature Engineering Tools
+
+**Located in:** `tools/eda_tools.py` and `tools/feature_tools.py`
+
+| Function                | Description                               |
+| ----------------------- | ----------------------------------------- |
+| `load_csv(path)`        | Loads dataset into memory                 |
+| `preview_data(n)`       | Shows first _n_ rows                      |
+| `describe_data()`       | Summary stats + missing values + dtypes   |
+| `column_info()`         | Lists numeric and categorical columns     |
+| `encode_categoricals()` | One-hot encodes categorical columns       |
+| `scale_numericals()`    | Standard-scales numeric features          |
+| `split_data()`          | Splits dataset into training/testing sets |
+| `save_dataframe(path)`  | Saves the transformed dataset to disk     |
+
+These tools prepare your data for downstream modeling directly through the agent pipeline.
+
+---
+
+## 🤖 ML Training Tools
+
+**Located in:** `tools/ml_tools.py`
+
+| Function                                                   | Description                                        |
+| ---------------------------------------------------------- | -------------------------------------------------- |
+| `train_model(state, label="Churn", model_type="logistic")` | Trains logistic regression or random forest models |
+| `evaluate_model(state, path=None)`                         | Evaluates a cached or saved model                  |
+| `save_model(state, path="models/model.pkl")`               | Saves trained model to the `/models` folder        |
+
+**Example Run**
+
+```bash
+python -m scripts.test_ml_tools
+```
+
+Output:
+
+```bash
+Model trained successfully (logistic).
+Accuracy: 0.8084
+Confusion Matrix:
+[[958  78]
+ [192 181]]
+Classification Report:
+...
+Model saved to models/churn_logreg.pkl
 ```
 
 ---
@@ -170,48 +196,45 @@ USER: save dataframe to data/telco/transformed.csv
 
 ---
 
-## ✅ Project Structure
+## 🗂️ Project Structure
 
 ```bash
 MLE-Agent/
 │
 ├── agent/
-│   ├── agent.py
-│   ├── core.py
-│   ├── planner.py
-│   ├── executor.py
-│   ├── tools.py
-│   ├── debug.py
-│   └── memory/
-│       ├── module.py
-│       ├── store.py
-│       ├── models.py
-│       ├── ranking.py
+│   ├── agent.py                 # Main agent orchestrator
+│   ├── core.py                  # LLM wrapper (OpenAI SDK)
+│   ├── planner.py               # Natural language planner (v3)
+│   ├── executor.py              # Executes tools & LLM plans
+│   ├── tools.py                 # Central tool registry
+│   ├── debug.py                 # Debug mode + log helper
+│   └── memory/                  # Memory subsystem
+│       ├── module.py            # High-level memory interface
+│       ├── store.py             # SQLite + FTS5 memory backend
+│       ├── models.py            # Memory object schema
+│       ├── ranking.py           # BM25 + recency + importance scoring
 │       └── __init__.py
 │
 ├── tools/
-│   ├── file_tools.py
-│   ├── python_tools.py
-│   ├── project_tools.py
-│   ├── eda_tools.py
-│   └── feature_tools.py
+│   ├── file_tools.py            # File read/write helpers
+│   ├── python_tools.py          # Safe Python execution
+│   ├── project_tools.py         # Project scaffold generator
+│   ├── eda_tools.py             # Data loading, preview, describe
+│   ├── feature_tools.py         # Feature engineering utilities
+│   └── ml_tools.py              # Model training & evaluation
 │
 ├── scripts/
-│   ├── test_agent_local.py
-│   ├── test_multistep.py
-│   ├── test_feature_tools.py
-│   ├── run_agent.py
-│   └── cli_demo.py
+│   ├── test_agent_local.py      # Planner + Executor integration test
+│   ├── test_multistep.py        # Multi-step natural language chain
+│   ├── test_feature_tools.py    # Feature engineering test
+│   ├── test_ml_tools.py         # ML training pipeline test
+│   ├── test_memory_smoke.py     # Memory system smoke test
+│   ├── run_agent.py             # CLI-based entry for agent
+│   └── cli_demo.py              # Interactive terminal demo
 │
 ├── tests/
-│   ├── test_agent.py
-│   ├── test_tools.py
-│   └── test_end_to_end.py
-│
-├── Dockerfile
-├── requirements.txt
-├── .gitignore
-└── README.md
+│   ├── test_agent.py            # Unit tests for plan_
+
 
 ```
 
@@ -241,57 +264,30 @@ export OPENAI_API_KEY="your-key"
 
 ## ✅ Roadmap
 
-### Next Steps (coming up next)
-
-✅ Multi-step planning
-
-✅ Memory module (episodic + semantic)
-
-✅ Memory-aware planning
-
-✅ Project scaffold tool
-
-✅ Full EDA tool suite
-
-✅ Feature engineering tools
-
-### Coming Next
-
-⬜ ML training tools (LogReg, RF, XGBoost)
-
-⬜ Model evaluation tools
-
-⬜ SHAP explainability
-
-⬜ FastAPI agent endpoint (/agent/query)
-
-⬜ Vector search memory (embeddings)
-
-⬜ Agent self-reflection
-
-⬜ Docker containerization
-
-⬜ AWS ECR/ECS agent deploy option
+| Stage               | Description                         | Status |
+| ------------------- | ----------------------------------- | ------ |
+| Planner v3          | Multi-step natural language planner | ✅     |
+| Memory Module       | Episodic + semantic recall          | ✅     |
+| EDA Tools           | Dataset loading and exploration     | ✅     |
+| Feature Tools       | Encoding, scaling, splitting        | ✅     |
+| ML Tools            | Model training and saving           | ✅     |
+| Explainability      | SHAP and model insights             | 🔜     |
+| FastAPI Endpoint    | `/agent/query` for API use          | 🔜     |
+| Docker / ECS Deploy | Containerized endpoint              | 🔜     |
 
 ---
 
 ## 🚀 Status
 
-MLE-Agent is now a memory-enabled, stateful ML assistant with:
+MLE-Agent is now a memory-enabled ML assistant with:
 
-✅ Natural language tool execution
+✅ Natural language planning
+✅ Memory-aware reasoning
+✅ EDA + feature engineering
+✅ Model training + saving
+✅ Clean modular design
 
-✅ Multi-step planning
-
-✅ EDA + Feature Engineering
-
-✅ Project generation
-
-✅ Memory recall
-
-✅ LLM fallback
-
-✅ Clean modular architecture
+A strong foundation for building a true Applied ML Engineering Agent.
 
 ---
 
