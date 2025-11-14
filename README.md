@@ -196,45 +196,119 @@ USER: save dataframe to data/telco/transformed.csv
 
 ---
 
+## 🧠 Model Explainability (SHAP)
+
+The **Explainability Module** helps interpret trained models by showing which features most influence predictions — both globally (across all customers) and locally (for individual predictions).
+
+### 🔹 Capabilities
+
+- **Global Feature Importance**
+
+  - Uses SHAP to compute average absolute impact of each feature.
+
+  - Saves visual plot: images/shap_global.png
+
+  - Helps understand which customer attributes drive churn overall.
+
+- **Local Explanation**
+
+  - Visualizes one sample’s prediction reason using a SHAP waterfall plot.
+
+  - Saves visual plot: images/shap_local.png
+
+  - Shows why a specific customer is predicted to churn or stay.
+
+### 🔹 **Example Workflow**
+
+```bash# Run explainability workflow
+python -m scripts.test_explainability_tools
+```
+
+Expected Output:
+
+```pgsql
+--- Load CSV ---
+CSV loaded successfully. Shape: (7043, 21)
+--- Encode Categoricals ---
+Categoricals encoded. New shape: (7043, 32)
+--- Scale Numericals ---
+Numerical features scaled (3 columns).
+--- Train or Load Model ---
+Loaded existing model from models/churn_logreg.pkl
+--- Compute SHAP Values ---
+SHAP values computed for 7043 samples and 31 features.
+--- Plot Global Importance ---
+Global SHAP importance plot saved to images/shap_global.png
+--- Plot Local Explanation ---
+Local SHAP explanation saved to images/shap_local.png
+✅ Explainability test complete. Check 'images/' folder for plots.
+```
+
+### 🔹 Example Outputs
+
+| Plot                                   | Description                       |
+| -------------------------------------- | --------------------------------- |
+| ![Global SHAP](images/shap_global.png) | Top global feature importances    |
+| ![Local SHAP](images/shap_local.png)   | Single-customer local explanation |
+
+---
+
 ## 🗂️ Project Structure
 
 ```bash
 MLE-Agent/
 │
 ├── agent/
-│   ├── agent.py                 # Main agent orchestrator
-│   ├── core.py                  # LLM wrapper (OpenAI SDK)
-│   ├── planner.py               # Natural language planner (v3)
-│   ├── executor.py              # Executes tools & LLM plans
-│   ├── tools.py                 # Central tool registry
-│   ├── debug.py                 # Debug mode + log helper
-│   └── memory/                  # Memory subsystem
-│       ├── module.py            # High-level memory interface
-│       ├── store.py             # SQLite + FTS5 memory backend
-│       ├── models.py            # Memory object schema
-│       ├── ranking.py           # BM25 + recency + importance scoring
+│   ├── agent.py
+│   ├── core.py
+│   ├── planner.py
+│   ├── executor.py
+│   ├── tools.py
+│   ├── debug.py
+│   └── memory/
+│       ├── module.py
+│       ├── store.py
+│       ├── models.py
+│       ├── ranking.py
 │       └── __init__.py
 │
 ├── tools/
-│   ├── file_tools.py            # File read/write helpers
-│   ├── python_tools.py          # Safe Python execution
-│   ├── project_tools.py         # Project scaffold generator
-│   ├── eda_tools.py             # Data loading, preview, describe
-│   ├── feature_tools.py         # Feature engineering utilities
-│   └── ml_tools.py              # Model training & evaluation
+│   ├── file_tools.py
+│   ├── python_tools.py
+│   ├── project_tools.py
+│   ├── eda_tools.py
+│   ├── feature_tools.py
+│   ├── ml_tools.py
+│   └── explainability_tools.py
 │
 ├── scripts/
-│   ├── test_agent_local.py      # Planner + Executor integration test
-│   ├── test_multistep.py        # Multi-step natural language chain
-│   ├── test_feature_tools.py    # Feature engineering test
-│   ├── test_ml_tools.py         # ML training pipeline test
-│   ├── test_memory_smoke.py     # Memory system smoke test
-│   ├── run_agent.py             # CLI-based entry for agent
-│   └── cli_demo.py              # Interactive terminal demo
+│   ├── test_agent_local.py
+│   ├── test_multistep.py
+│   ├── test_feature_tools.py
+│   ├── test_ml_tools.py
+│   ├── test_explainability_tools.py
+│   ├── run_agent.py
+│   └── cli_demo.py
+│
+├── models/
+│   └── churn_logreg.pkl
+│
+├── images/
+│   ├── shap_global.png
+│   └── shap_local.png
+│
+├── data/
+│   └── telco/WA_Fn-UseC_-Telco-Customer-Churn.csv
 │
 ├── tests/
-│   ├── test_agent.py            # Unit tests for plan_
-
+│   ├── test_agent.py
+│   ├── test_tools.py
+│   └── test_end_to_end.py
+│
+├── Dockerfile
+├── requirements.txt
+├── .gitignore
+└── README.md
 
 ```
 
@@ -271,7 +345,7 @@ export OPENAI_API_KEY="your-key"
 | EDA Tools           | Dataset loading and exploration     | ✅     |
 | Feature Tools       | Encoding, scaling, splitting        | ✅     |
 | ML Tools            | Model training and saving           | ✅     |
-| Explainability      | SHAP and model insights             | 🔜     |
+| Explainability      | SHAP and model insights             | ✅     |
 | FastAPI Endpoint    | `/agent/query` for API use          | 🔜     |
 | Docker / ECS Deploy | Containerized endpoint              | 🔜     |
 
@@ -286,6 +360,8 @@ MLE-Agent is now a memory-enabled ML assistant with:
 ✅ Memory-aware reasoning
 
 ✅ EDA + feature engineering
+
+✅ Explainability
 
 ✅ Model training + saving
 
