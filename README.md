@@ -218,7 +218,7 @@ The **Explainability Module** helps interpret trained models by showing which fe
 
   - Shows why a specific customer is predicted to churn or stay.
 
-### 🔹 **Example Workflow**
+### 🔹 Example Workflow
 
 ```bash# Run explainability workflow
 python -m scripts.test_explainability_tools
@@ -250,6 +250,116 @@ Local SHAP explanation saved to images/shap_local.png
 | -------------------------------------- | --------------------------------- |
 | ![Global SHAP](images/shap_global.png) | Top global feature importances    |
 | ![Local SHAP](images/shap_local.png)   | Single-customer local explanation |
+
+---
+
+## ⚡ FastAPI Integration (MLE-Agent API)
+
+MLE-Agent now runs as a **RESTful service** powered by **FastAPI**, exposing endpoints for both agent queries and ML model operations.
+
+### 🔹 Endpoints Overview
+
+| **Endpoint** | **Method** | **Description**                                      |
+| ------------ | ---------- | ---------------------------------------------------- |
+| /            | GET        | Root health message                                  |
+| /health      | GET        | Service health check                                 |
+| /info        | GET        | Returns metadata about the API and model             |
+| /agent/query | POST       | Sends a natural-language request to the MLE-Agent    |
+| /ml/train    | POST       | Trains a churn prediction model on the Telco dataset |
+| /ml/predict  | POST       | Makes a churn prediction for a new input sample      |
+| /ml/features | GET        | Returns all feature names used by the trained model  |
+
+### 🔹 Example Requests
+
+1️⃣ **Agent Query**
+
+```bash
+curl -X POST "http://127.0.0.1:8000/agent/query" \
+ -H "Content-Type: application/json" \
+ -d '{"query": "What is logistic regression?"}'
+```
+
+**Response**:
+
+```json
+{
+  "query": "What is logistic regression?",
+  "response": "Logistic regression is a statistical method used for binary classification..."
+}
+```
+
+2️⃣ **Train Model**
+
+```bash
+curl -X POST "http://127.0.0.1:8000/ml/train"
+```
+
+**Response**:
+
+```json
+{
+  "message": "Model training complete.",
+  "details": "Model trained successfully (logistic). Accuracy: 0.8084",
+  "saved_to": "models/churn_logreg.pkl"
+}
+```
+
+3️⃣ **Predict Churn**
+
+```bash
+curl -X POST "http://127.0.0.1:8000/ml/predict" \
+ -H "Content-Type: application/json" \
+ -d '{
+"tenure": 12,
+"MonthlyCharges": 70.35,
+"TotalCharges": 845.5,
+"gender_Male": 1,
+"SeniorCitizen": 0,
+"Partner_Yes": 1,
+"Dependents_Yes": 0,
+"InternetService_Fiber optic": 1,
+"Contract_Two year": 0
+}'
+```
+
+**Response**:
+
+```json
+{
+"prediction": 1,
+"probabilities": [0.000000001, 0.999999999],
+"features_used": ["SeniorCitizen", "tenure", "MonthlyCharges", "TotalCharges", ...]
+}
+```
+
+4️⃣ **Feature List**
+
+```bash
+curl -X GET "http://127.0.0.1:8000/ml/features"
+```
+
+**Response**:
+
+```json
+{
+"feature_names": ["SeniorCitizen", "tenure", "MonthlyCharges", "TotalCharges", ...],
+"count": 30
+}
+```
+
+🔹 **Swagger UI**
+
+FastAPI auto-generates interactive API docs at:
+
+- Swagger: http://127.0.0.1:8000/docs
+
+- ReDoc: http://127.0.0.1:8000/redoc
+
+🔹 **Run Locally**
+
+```bash
+uvicorn app:app --reload
+```
 
 ---
 
@@ -346,7 +456,7 @@ export OPENAI_API_KEY="your-key"
 | Feature Tools       | Encoding, scaling, splitting        | ✅     |
 | ML Tools            | Model training and saving           | ✅     |
 | Explainability      | SHAP and model insights             | ✅     |
-| FastAPI Endpoint    | `/agent/query` for API use          | 🔜     |
+| FastAPI Endpoint    | `/agent/query` for API use          | ✅     |
 | Docker / ECS Deploy | Containerized endpoint              | 🔜     |
 
 ---
