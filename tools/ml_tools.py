@@ -47,8 +47,12 @@ def train_model(state, label="Churn", model_type="logistic"):
     X = df.drop(label, axis=1)
     y = df[label]
 
-    # Drop non-numeric columns (e.g. IDs left from earlier)
-    X = X.select_dtypes(include=["number"])
+    # Drop only identifier-like or non-feature columns
+    drop_cols = [c for c in X.columns if 'customerID' in c or 'id' in c.lower()]
+    X = X.drop(columns=drop_cols, errors='ignore')
+
+    # Convert all data to numeric (get_dummies can create bools/uint8)
+    X = X.apply(pd.to_numeric, errors="coerce").fillna(0)
 
     # If y is categorical string, encode
     if y.dtype == "O":
@@ -117,6 +121,12 @@ def save_model(state, path="model.pkl"):
     
     # ensure the directory exists
     os.makedirs(os.path.dirname(path), exist_ok=True)
+
+    # Save both model and feature names
+    model_bundle = {
+        "model": model,
+        "feature_names": list(state["df"].drop(columns=["Churn"], errors="ignore").columns)
+    }
     
-    joblib.dump(model, path)
-    return f"Model saved to {path}"
+    joblib.dump(model_bundle, path)
+    return f"Model saved (with feature names) to {path}"
