@@ -508,7 +508,7 @@ docker system prune -a -f     # remove all unused images, layers, and cache
 
 Removes stopped containers, unused images, and build cache layers for a clean local environment.
 
-- Use these commands to safely free up disk space and keep your Docker environment clean.
+- Use these commands to **safely free up disk space** and keep your Docker environment clean.
 
 ---
 
