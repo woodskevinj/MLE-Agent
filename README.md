@@ -646,7 +646,7 @@ export OPENAI_API_KEY="your-key"
 | ML Tools            | Model training and saving           | ✅     |
 | Explainability      | SHAP and model insights             | ✅     |
 | FastAPI Endpoint    | `/agent/query` for API use          | ✅     |
-| Docker / ECS Deploy | Containerized endpoint              | 🔜     |
+| Docker / ECS Deploy | Containerized endpoint              | ✅     |
 
 ---
 
