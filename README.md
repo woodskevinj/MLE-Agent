@@ -522,6 +522,24 @@ docker compose up --build
 
 ---
 
+### 🔹 6. Pass your OpenAI API key
+
+The container needs your OpenAI API key to run language and planning tasks.
+
+You can pass it at runtime:
+
+```bash
+docker run -p 8000:8000 -e OPENAI_API_KEY=$OPENAI_API_KEY mle-agent-api
+```
+
+Or use a .env file (if using Docker Compose):
+
+```bash
+OPENAI_API_KEY=sk-xxxx-your-key-here
+```
+
+---
+
 ### 🧩 Notes
 
 - The image uses a non-root user (appuser) for safer runtime.
