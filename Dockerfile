@@ -5,7 +5,7 @@ FROM python:3.10-slim AS builder
 
 WORKDIR /app
 
-# Install system dependencies needed for ML packages (pandas, numpy, etc.)
+# Install system dependencies needed for ML packages
 RUN apt-get update && apt-get install -y \
     build-essential \
     gcc \
@@ -16,8 +16,6 @@ COPY requirements.txt .
 
 # Create a virtual environment inside the builder
 RUN python -m venv /opt/venv
-
-# Activate venv and install packages
 RUN /opt/venv/bin/pip install --upgrade pip && \
     /opt/venv/bin/pip install -r requirements.txt
 
@@ -39,9 +37,11 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Copy app source code
 COPY . .
 
-# ----------------------------
+# ✅ Ensure data directory and sample dataset exist inside container
+RUN mkdir -p data/telco
+COPY data/telco/WA_Fn-UseC_-Telco-Customer-Churn.csv data/telco/WA_Fn-UseC_-Telco-Customer-Churn.csv
+
 # ✅ Fix: create non-root user and ensure /app is writable
-# ----------------------------
 RUN useradd -m appuser && chown -R appuser /app
 USER appuser
 
