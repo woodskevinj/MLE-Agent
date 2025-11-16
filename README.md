@@ -560,6 +560,56 @@ OPENAI_API_KEY=sk-xxxx-your-key-here
 
 ---
 
+## ☁️ AWS ECR / ECS Deployment (Optional Future Step)
+
+To deploy MLE-Agent API on AWS:
+
+### 1️⃣ Authenticate Docker with AWS ECR
+
+```bash
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <aws_account_id>.dkr.ecr.us-east-1.amazonaws.com
+```
+
+### 2️⃣ Tag your local image
+
+```bash
+docker tag mle-agent-api:latest <aws_account_id>.dkr.ecr.us-east-1.amazonaws.com/mle-agent-api:latest
+```
+
+### 3️⃣ Push to ECR
+
+```bash
+docker push <aws_account_id>.dkr.ecr.us-east-1.amazonaws.com/mle-agent-api:latest
+```
+
+### 4️⃣ Create ECS Task Definition
+
+Use `mle-agent-api:latest` as your container image and expose port 8000.
+
+Set the environment variable for your API key:
+
+```bash
+OPENAI_API_KEY=<your_key_here>
+```
+
+### 5️⃣ Run ECS Service
+
+Deploy the task on Fargate or EC2 with:
+
+- CPU: 0.5 vCPU
+
+- Memory: 1GB
+
+- Port: 8000 → Load Balancer target group (optional public endpoint)
+
+Then access:
+
+```arduino
+http://<your-ecs-public-endpoint>/docs
+```
+
+---
+
 ## 🗂️ Project Structure
 
 ```bash
