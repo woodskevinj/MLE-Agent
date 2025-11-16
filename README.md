@@ -267,15 +267,15 @@ The app will launch at http://127.0.0.1:8000/docs with a full Swagger UI and Ope
 
 ### 🔹 Available Endpoints
 
-| Method | Endpoint     | Description                                                          |
-| ------ | ------------ | -------------------------------------------------------------------- |
-| GET    | /            | Health check / Welcome message                                       |
-| GET    | /info        | Returns API metadata and model info                                  |
-| GET    | /health      | Health status                                                        |
-| POST   | /agent/query | Accepts natural language queries and returns an intelligent response |
-| POST   | /ml/train    | Trains a churn model using the Telco dataset                         |
-| POST   | /ml/predict  | Predicts churn for a single input sample                             |
-| GET    | /ml/features | Returns the feature names used in the trained model                  |
+| **Method** | **Endpoint** | **Description**                                                      |
+| ---------- | ------------ | -------------------------------------------------------------------- |
+| GET        | /            | Health check / Welcome message                                       |
+| GET        | /info        | Returns API metadata and model info                                  |
+| GET        | /health      | Health status                                                        |
+| POST       | /agent/query | Accepts natural language queries and returns an intelligent response |
+| POST       | /ml/train    | Trains a churn model using the Telco dataset                         |
+| POST       | /ml/predict  | Predicts churn for a single input sample                             |
+| GET        | /ml/features | Returns the feature names used in the trained model                  |
 
 ### 🔹 Example: /agent/query
 
@@ -432,6 +432,105 @@ Accessible via:
 ```bash
 uvicorn app:app --reload
 ```
+
+---
+
+## 🐳 Docker Deployment
+
+MLE-Agent can be containerized into a lightweight, production-ready FastAPI service using Docker.
+
+### 🔹 1. Build the Docker image
+
+From the project root:
+
+```bash
+docker build -t mle-agent-api .
+```
+
+This runs a **multi-stage** build:
+
+- Stage 1 (`builder`) compiles dependencies and Python packages in an isolated virtual env.
+
+- Stage 2 (`runtime`)` copies only what’s needed to run the API (no cache, smaller image).
+
+---
+
+### 🔹 2. Run the container
+
+```bash
+docker run -p 8000:8000 mle-agent-api
+```
+
+✅ The API will be live at:
+
+👉 http://127.0.0.1:8000/docs
+(Swagger UI)
+
+👉 http://127.0.0.1:8000/redoc
+(ReDoc UI)
+
+---
+
+### 🔹 3. Verify endpoints
+
+Try these in your browser or Swagger UI:
+
+| **Method** | **Endpoint** | **Purpose**                      |
+| ---------- | ------------ | -------------------------------- |
+| POST       | /agent/query | Ask natural-language questions   |
+| POST       | /ml/train    | Train the churn-prediction model |
+| POST       | /ml/predict  | Run a live prediction            |
+| GET        | /ml/features | List model feature names         |
+| GET        | /info        | Show model metadata              |
+| GET        | /health      | Health check endpoint            |
+
+---
+
+### 🔹 4. Stop and clean up
+
+```bash
+docker ps               # list running containers
+docker stop <container> # stop container
+docker system prune -f  # remove unused images/layers (optional)
+```
+
+---
+
+### 🔹 5. (Optional) Run with Docker Compose
+
+For easier local development, you can use this minimal compose file:
+
+```yaml
+version: "3.9"
+services:
+  mle-agent:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+```
+
+Run it with:
+
+```bash
+docker compose up --build
+```
+
+---
+
+### 🧩 Notes
+
+- The image uses a non-root user (appuser) for safer runtime.
+
+- /models and /data are volume-mount-friendly for persistence.
+
+- The app auto-exposes port 8000 for FastAPI.
+
+- Multi-stage build keeps final image size under ≈ 800 MB, even with SHAP + matplotlib.
 
 ---
 
