@@ -461,6 +461,14 @@ This runs a **multi-stage** build:
 docker run -p 8000:8000 mle-agent-api
 ```
 
+or
+
+```bash
+docker run -p 8000:8000 -e OPENAI_API_KEY=$OPENAI_API_KEY mle-agent-api
+```
+
+- (The container needs your OpenAI API key to run language and planning tasks. You can pass it at runtime)
+
 ✅ The API will be live at:
 
 👉 http://127.0.0.1:8000/docs
@@ -522,7 +530,7 @@ docker compose up --build
 
 ---
 
-### 🔹 6. Pass your OpenAI API key
+### 🔹 6. Be Sure to Pass your OpenAI API key
 
 The container needs your OpenAI API key to run language and planning tasks.
 
