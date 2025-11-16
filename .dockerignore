@@ -24,6 +24,7 @@ env/
 # Data (DO NOT include datasets in Docker)
 # ------------------------------
 data/
+!data/telco/WA_Fn-UseC_-Telco-Customer-Churn.csv
 !data/README.md
 
 # ------------------------------
