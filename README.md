@@ -496,11 +496,19 @@ Try these in your browser or Swagger UI:
 
 ### 🔹 4. Stop and clean up
 
+After testing, reclaim space safely:
+
 ```bash
-docker ps               # list running containers
-docker stop <container> # stop container
-docker system prune -f  # remove unused images/layers (optional)
+docker ps                     # list running containers
+docker stop <container>       # stop container
+docker container prune -f     # remove all stopped containers
+docker image prune -f         # remove dangling/unreferenced images
+docker system prune -a -f     # remove all unused images, layers, and cache
 ```
+
+Removes stopped containers, unused images, and build cache layers for a clean local environment.
+
+- Use these commands to safely free up disk space and keep your Docker environment clean.
 
 ---
 
