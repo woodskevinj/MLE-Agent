@@ -253,107 +253,179 @@ Local SHAP explanation saved to images/shap_local.png
 
 ---
 
-## ⚡ FastAPI Integration (MLE-Agent API)
+## ⚡ FastAPI Integration
 
-MLE-Agent now runs as a **RESTful service** powered by **FastAPI**, exposing endpoints for both agent queries and ML model operations.
+MLE-Agent now includes a **production-grade FastAPI interface** exposing ML operations and intelligent query endpoints.
 
-### 🔹 Endpoints Overview
-
-| **Endpoint** | **Method** | **Description**                                      |
-| ------------ | ---------- | ---------------------------------------------------- |
-| /            | GET        | Root health message                                  |
-| /health      | GET        | Service health check                                 |
-| /info        | GET        | Returns metadata about the API and model             |
-| /agent/query | POST       | Sends a natural-language request to the MLE-Agent    |
-| /ml/train    | POST       | Trains a churn prediction model on the Telco dataset |
-| /ml/predict  | POST       | Makes a churn prediction for a new input sample      |
-| /ml/features | GET        | Returns all feature names used by the trained model  |
-
-### 🔹 Example Requests
-
-1️⃣ **Agent Query**
+### 🔹 Run the API locally
 
 ```bash
-curl -X POST "http://127.0.0.1:8000/agent/query" \
- -H "Content-Type: application/json" \
- -d '{"query": "What is logistic regression?"}'
+uvicorn app:app --reload
 ```
 
-**Response**:
+The app will launch at http://127.0.0.1:8000/docs with a full Swagger UI and OpenAPI schema.
+
+### 🔹 Available Endpoints
+
+| Method | Endpoint     | Description                                                          |
+| ------ | ------------ | -------------------------------------------------------------------- |
+| GET    | /            | Health check / Welcome message                                       |
+| GET    | /info        | Returns API metadata and model info                                  |
+| GET    | /health      | Health status                                                        |
+| POST   | /agent/query | Accepts natural language queries and returns an intelligent response |
+| POST   | /ml/train    | Trains a churn model using the Telco dataset                         |
+| POST   | /ml/predict  | Predicts churn for a single input sample                             |
+| GET    | /ml/features | Returns the feature names used in the trained model                  |
+
+### 🔹 Example: /agent/query
 
 ```json
 {
-  "query": "What is logistic regression?",
-  "response": "Logistic regression is a statistical method used for binary classification..."
+  "query": "Explain the difference between classification and regression in machine learning."
 }
 ```
 
-2️⃣ **Train Model**
+✅ **Response Example**
 
-```bash
-curl -X POST "http://127.0.0.1:8000/ml/train"
+```json
+{
+  "query": "Explain the difference between classification and regression in machine learning.",
+  "response": "Classification predicts discrete categories, while regression predicts continuous values. For example, predicting whether a customer will churn (classification) versus predicting their total spend (regression)."
+}
 ```
 
-**Response**:
+### 🔹 Example: /ml/train
+
+**Triggers a full training run on the Telco dataset and saves the model to** models/churn_logreg.pkl.
+
+✅ **Response Example**
 
 ```json
 {
   "message": "Model training complete.",
-  "details": "Model trained successfully (logistic). Accuracy: 0.8084",
-  "saved_to": "models/churn_logreg.pkl"
+  "details": "Model trained successfully (logistic). Accuracy: 0.8084...",
+  "saved_to": "models/churn_logreg.pkl",
+  "save_message": "Model saved to models/churn_logreg.pkl"
 }
 ```
 
-3️⃣ **Predict Churn**
+### 🔹 Example: /ml/predict
 
-```bash
-curl -X POST "http://127.0.0.1:8000/ml/predict" \
- -H "Content-Type: application/json" \
- -d '{
-"tenure": 12,
-"MonthlyCharges": 70.35,
-"TotalCharges": 845.5,
-"gender_Male": 1,
-"SeniorCitizen": 0,
-"Partner_Yes": 1,
-"Dependents_Yes": 0,
-"InternetService_Fiber optic": 1,
-"Contract_Two year": 0
-}'
-```
-
-**Response**:
+**Request Body Example**
 
 ```json
 {
-"prediction": 1,
-"probabilities": [0.000000001, 0.999999999],
-"features_used": ["SeniorCitizen", "tenure", "MonthlyCharges", "TotalCharges", ...]
+  "tenure": 12,
+  "MonthlyCharges": 70.35,
+  "TotalCharges": 845.5,
+  "gender_Male": 1,
+  "SeniorCitizen": 0,
+  "Partner_Yes": 1,
+  "Dependents_Yes": 0,
+  "InternetService_Fiber optic": 1,
+  "Contract_Two year": 0
 }
 ```
 
-4️⃣ **Feature List**
-
-```bash
-curl -X GET "http://127.0.0.1:8000/ml/features"
-```
-
-**Response**:
+### ✅ Response Example
 
 ```json
 {
-"feature_names": ["SeniorCitizen", "tenure", "MonthlyCharges", "TotalCharges", ...],
-"count": 30
+  "prediction": 1,
+  "probabilities": [8.424489994496298e-10, 0.999999999157551],
+  "features_used": [
+    "SeniorCitizen",
+    "tenure",
+    "MonthlyCharges",
+    "TotalCharges",
+    "gender_Male",
+    "Partner_Yes",
+    "Dependents_Yes",
+    "InternetService_Fiber optic",
+    "Contract_Two year"
+  ]
 }
 ```
 
-🔹 **Swagger UI**
+### ❗ Validation Errors (HTTP 422)
 
-FastAPI auto-generates interactive API docs at:
+If required fields are missing or incorrectly typed, FastAPI returns:
 
-- Swagger: http://127.0.0.1:8000/docs
+```json
+{
+  "detail": [
+    {
+      "loc": ["body", "tenure"],
+      "msg": "field required",
+      "type": "value_error.missing"
+    }
+  ]
+}
+```
 
-- ReDoc: http://127.0.0.1:8000/redoc
+### 🔹 Example: /ml/features
+
+✅ **Response Example**
+
+```json
+{
+  "feature_names": [
+    "SeniorCitizen",
+    "tenure",
+    "MonthlyCharges",
+    "TotalCharges",
+    "gender_Male",
+    "Partner_Yes",
+    "Dependents_Yes",
+    "InternetService_Fiber optic",
+    "Contract_Two year"
+  ],
+  "count": 9
+}
+```
+
+### 🔹 Example: /info
+
+✅ **Response Example**
+
+```json
+{
+  "service": "MLE-Agent API",
+  "version": "1.0.0",
+  "framework": "FastAPI",
+  "core_modules": [
+    "Planner",
+    "Memory",
+    "Executor",
+    "ML Tools",
+    "Explainability"
+  ],
+  "model_bundle": {
+    "type": "Logistic Regression",
+    "explainability": "SHAP",
+    "saved_model": "models/churn_logreg.pkl"
+  },
+  "description": "MLE-Agent is a lightweight Machine Learning Engineering Assistant that combines natural language reasoning, feature engineering, model training, and explainability into one unified API."
+}
+```
+
+---
+
+## 🧭 Swagger & OpenAPI Customization
+
+MLE-Agent’s API includes:
+
+- rich OpenAPI metadata (title, description, contact, and license)
+
+- schema examples for every endpoint
+
+- full response documentation (200, 422, and 500 where applicable)
+
+Accessible via:
+
+- Swagger UI: http://127.0.0.1:8000/docs
+
+- ReDoc UI: http://127.0.0.1:8000/redoc
 
 🔹 **Run Locally**
 
