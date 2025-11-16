@@ -5,21 +5,23 @@ FROM python:3.10-slim AS builder
 
 WORKDIR /app
 
-# Install system dependencies needed for ML packages (pandas, numpy, etc.)
-RUN apt-get update && apt-get install -y \
+# Install system deps needed for ML (numpy, pandas, shap, matplotlib)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
+    libgomp1 \
+    libpng-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirement file and install dependencies
+# Copy requirement file
 COPY requirements.txt .
 
-# Create a virtual environment inside the builder
+# Create virtual environment
 RUN python -m venv /opt/venv
 
-# Activate venv and install packages
+# Install dependencies inside venv
 RUN /opt/venv/bin/pip install --upgrade pip && \
-    /opt/venv/bin/pip install -r requirements.txt
+    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
 
 # ============================
@@ -32,15 +34,19 @@ WORKDIR /app
 # Copy virtual environment from builder
 COPY --from=builder /opt/venv /opt/venv
 
-# Ensure venv is used for all python commands
+# Activate venv
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy app source code
+# Copy application source
 COPY . .
+
+# Create non-root user (optional but recommended)
+RUN useradd -m appuser
+USER appuser
 
 # Expose FastAPI port
 EXPOSE 8000
 
-# Start the FastAPI server
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Default command
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
